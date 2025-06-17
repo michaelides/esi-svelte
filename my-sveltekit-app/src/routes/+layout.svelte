@@ -1,9 +1,10 @@
 <script>
   import '../app.css'; // Global styles
-  import { onMount } from 'svelte';
+  import { onMount, get } from 'svelte'; // Added get
   import { initializeUserSession, userGreeting, isLoggedIn } from '$lib/stores/userStore.js';
   import { setSettingsFromServer } from '$lib/stores/uiStore.js';
-  import { loadChatList } from '$lib/stores/chatStore.js'; // Import loadChatList
+  import { loadChatList } from '$lib/stores/chatStore.js';
+  import { loadUploadedFiles } from '$lib/stores/fileStore.js'; // Import loadUploadedFiles
 
   onMount(async () => {
     const settingsFromServer = await initializeUserSession();
@@ -12,7 +13,8 @@
       if (settingsFromServer) {
         setSettingsFromServer(settingsFromServer);
       }
-      await loadChatList(); // Load chat list if session initialized successfully
+      await loadChatList(); // Load chat list
+      await loadUploadedFiles(); // Load uploaded files
     }
     // If initializeUserSession fails, isLoggedIn will be false,
     // and userGreeting will contain an error message from userStore.

@@ -1,17 +1,24 @@
 import uuid
-import json # Added
-import asyncio # Added
-import datetime # Added
-from fastapi import FastAPI, Request, Response, Cookie, HTTPException, Path, Body
-from fastapi.responses import StreamingResponse # Added
+
+import json
+import asyncio
+import datetime
+import os # Added for os.makedirs
+from fastapi import FastAPI, Request, Response, Cookie, HTTPException, Path, Body, UploadFile, File # Added UploadFile, File
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Dict, Optional, Tuple
 
 import uvicorn
 
 # Agent module imports
-from .agent_config import initialize_settings as agent_initialize_settings
-from .agent_config import update_llm_temperature, get_llm_temperature, MAX_CHAT_HISTORY_MESSAGES
+from .agent_config import ( # Grouped imports
+    initialize_settings as agent_initialize_settings,
+    update_llm_temperature,
+    get_llm_temperature,
+    MAX_CHAT_HISTORY_MESSAGES,
+    UI_ACCESSIBLE_WORKSPACE # Added UI_ACCESSIBLE_WORKSPACE
+)
 from .agent_core import create_orchestrator_agent, generate_llm_greeting as core_generate_llm_greeting
 
 # Chat module imports
@@ -20,6 +27,10 @@ from .chat_models import (
     ChatMetadata, RenameChatRequest, ListChatsResponse, SimpleStatusResponse
 )
 import python_backend.chat_handler as chat_handler
+
+# File module imports
+import python_backend.file_handler as file_handler # Added
+from .file_handler import FileProcessDetail, UploadedFileRecord # Added specific model imports
 
 app = FastAPI()
 
@@ -56,15 +67,20 @@ def set_persistent_cookie(response: Response, key: str, value: str, days: int = 
 async def startup_event():
     print("FastAPI app startup: Initializing LlamaIndex global settings...")
     agent_initialize_settings(temperature=app_level_settings.temperature)
+
+    # Ensure UI_ACCESSIBLE_WORKSPACE exists
+    try:
+        os.makedirs(UI_ACCESSIBLE_WORKSPACE, exist_ok=True)
+        print(f"User uploaded files workspace ensured at: {UI_ACCESSIBLE_WORKSPACE}")
+    except Exception as e:
+        print(f"Error creating UI_ACCESSIBLE_WORKSPACE at {UI_ACCESSIBLE_WORKSPACE}: {e}")
+
     print("FastAPI app started. LlamaIndex global settings initialized.")
 
 # --- User Chat Data Cache Helper ---
 def get_user_chat_data_from_cache_or_load(user_id: str, ltm_enabled: bool) -> Tuple[Dict[str, ChatMetadata], Dict[str, List[ChatMessage]]]:
     if ltm_enabled and user_id in app.state.user_chat_data_cache:
         cached_data = app.state.user_chat_data_cache[user_id]
-        # Ensure metadata values are ChatMetadata instances and messages are ChatMessage instances
-        # This might be overly cautious if chat_handler always returns Pydantic models,
-        # but good for robustness if cache could somehow store raw dicts.
         parsed_metadata = {k: (v if isinstance(v, ChatMetadata) else ChatMetadata(**v)) for k, v in cached_data.get("metadata", {}).items()}
         parsed_messages = {}
         for chat_id_key, msg_list in cached_data.get("messages", {}).items():
@@ -76,7 +92,7 @@ def get_user_chat_data_from_cache_or_load(user_id: str, ltm_enabled: bool) -> Tu
         app.state.user_chat_data_cache[user_id] = {"metadata": metadata, "messages": messages_data}
     return metadata, messages_data
 
-# --- API Endpoints ---
+# --- API Endpoints (Init, Settings, Root) ---
 @app.post("/api/init", response_model=InitResponse)
 async def initialize_session(request: Request, response: Response):
     user_id = request.cookies.get(USER_ID_COOKIE)
@@ -111,10 +127,14 @@ async def update_app_settings_endpoint(settings: LLMSettings, response: Response
     if app_level_settings.long_term_memory_enabled != settings.long_term_memory_enabled:
         set_persistent_cookie(response, LTM_PREF_COOKIE, str(settings.long_term_memory_enabled))
 
-    app_level_settings = settings # This directly assigns the new settings object
+    app_level_settings = settings
     update_llm_temperature(app_level_settings.temperature)
     app_level_settings.temperature = get_llm_temperature()
     return app_level_settings
+
+@app.get("/")
+async def read_root():
+    return {"message": "ESI Backend is running with Chat and File Endpoints"}
 
 # --- Chat Management Endpoints ---
 @app.get("/api/chats", response_model=ListChatsResponse)
@@ -147,7 +167,6 @@ async def get_specific_chat_session(chat_id: str = Path(...), user_id: Optional[
         messages=all_user_chat_messages[chat_id], last_updated=chat_metadata_index[chat_id].last_updated
     )
 
-# Non-streaming message endpoint (kept for now as per prompt)
 @app.post("/api/chats/{chat_id}/message", response_model=NewChatMessageResponse)
 async def post_message_to_chat(
     chat_id: str = Path(...), request_body: NewChatMessageRequest = Body(...),
@@ -161,44 +180,35 @@ async def post_message_to_chat(
     assistant_msg_obj = chat_handler.add_message_to_chat_session(
         user_id, chat_id, request_body.query, chat_metadata_index, all_user_chat_messages,
         app.state.agent_runner, app_level_settings.long_term_memory_enabled,
-        app_level_settings.verbosity, app_level_settings.temperature # Pass settings
+        app_level_settings.verbosity, app_level_settings.temperature
     )
     if not assistant_msg_obj: raise HTTPException(status_code=500, detail="Assistant response failed.")
     app.state.user_chat_data_cache[user_id] = {"metadata": chat_metadata_index, "messages": all_user_chat_messages}
     return NewChatMessageResponse(chat_id=chat_id, assistant_message=assistant_msg_obj)
 
-# New Streaming message endpoint
 @app.post("/api/chats/{chat_id}/message_stream")
 async def stream_chat_message(
-    chat_id: str = Path(...),
-    request_data: NewChatMessageRequest = Body(...),
+    chat_id: str = Path(...), request_data: NewChatMessageRequest = Body(...),
     user_id: Optional[str] = Cookie(None, alias=USER_ID_COOKIE),
 ):
     if not user_id: raise HTTPException(status_code=401, detail="User not authenticated.")
     if not app.state.agent_runner: raise HTTPException(status_code=503, detail="Agent is not available.")
-
     chat_metadata_index, all_user_chat_messages = get_user_chat_data_from_cache_or_load(user_id, app_level_settings.long_term_memory_enabled)
-
     if chat_id not in all_user_chat_messages or chat_id not in chat_metadata_index:
         raise HTTPException(status_code=404, detail="Chat session not found.")
 
     current_chat_messages = all_user_chat_messages[chat_id]
-
     user_api_message = ChatMessage(role="user", content=request_data.query)
     current_chat_messages.append(user_api_message)
 
-    # Update metadata timestamp and save user message if LTM enabled
     now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
     chat_metadata_index[chat_id].last_updated = now_iso
     if app_level_settings.long_term_memory_enabled:
-        # Save history with user message before starting stream for assistant response
         chat_handler.save_chat_history_to_hf(user_id, {k: [m.model_dump() for m in v_list] for k, v_list in all_user_chat_messages.items()})
         chat_handler.save_chat_metadata_to_hf(user_id, {k: v.model_dump() for k, v in chat_metadata_index.items()})
-
     app.state.user_chat_data_cache[user_id] = {"metadata": chat_metadata_index, "messages": all_user_chat_messages}
 
     llama_history = chat_handler.format_llama_chat_history(current_chat_messages)
-
     async def event_generator():
         full_assistant_response = ""
         try:
@@ -209,33 +219,20 @@ async def stream_chat_message(
             async for chunk in stream:
                 full_assistant_response += chunk
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
-
-            # Send end-of-stream marker
             yield f"data: {json.dumps({'type': 'eos'})}\n\n"
-
         except Exception as e:
             print(f"Error during stream generation: {e}")
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
-            return # Stop generation on error
-
-        # After stream, save full assistant response
-        if full_assistant_response.strip(): # Ensure there's content to save
+            return
+        if full_assistant_response.strip():
             assistant_api_message = ChatMessage(role="assistant", content=full_assistant_response)
             current_chat_messages.append(assistant_api_message)
-            chat_metadata_index[chat_id].last_updated = datetime.datetime.now(datetime.timezone.utc).isoformat() # Update again
-
+            chat_metadata_index[chat_id].last_updated = datetime.datetime.now(datetime.timezone.utc).isoformat()
             if app_level_settings.long_term_memory_enabled:
                 chat_handler.save_chat_history_to_hf(user_id, {k: [m.model_dump() for m in v_list] for k, v_list in all_user_chat_messages.items()})
                 chat_handler.save_chat_metadata_to_hf(user_id, {k: v.model_dump() for k, v in chat_metadata_index.items()})
-
             app.state.user_chat_data_cache[user_id] = {"metadata": chat_metadata_index, "messages": all_user_chat_messages}
-            print(f"Stream ended. Full assistant response saved for chat {chat_id}.")
-        else:
-            print(f"Stream ended for chat {chat_id}, but no content from assistant to save.")
-
-
     return StreamingResponse(event_generator(), media_type="text/event-stream")
-
 
 @app.put("/api/chats/{chat_id}", response_model=ChatMetadata)
 async def rename_chat_endpoint(
@@ -260,13 +257,46 @@ async def delete_chat_endpoint(
     success = chat_handler.delete_chat_session_logic(
         user_id, chat_id, all_user_chat_messages, chat_metadata_index, app_level_settings.long_term_memory_enabled
     )
-    # if not success: raise HTTPException(status_code=404, detail="Chat not found for deletion or delete failed.") # Too strict
     app.state.user_chat_data_cache[user_id] = {"metadata": chat_metadata_index, "messages": all_user_chat_messages}
     return SimpleStatusResponse(success=success, message=f"Delete operation for chat {chat_id} processed.")
 
-@app.get("/")
-async def read_root():
-    return {"message": "ESI Backend is running with Chat Endpoints (including streaming)"}
+# --- File Management Endpoints ---
+@app.post("/api/files/upload", response_model=FileProcessDetail)
+async def upload_file_endpoint(
+    file: UploadFile = File(...),
+    user_id: Optional[str] = Cookie(None, alias=USER_ID_COOKIE)
+):
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found in cookies.")
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided.")
+
+    # Process and register the file
+    process_detail = file_handler.process_and_register_uploaded_file(user_id, file)
+
+    if process_detail.status == "error":
+        raise HTTPException(status_code=500, detail=process_detail.message or "File processing failed.")
+
+    return process_detail
+
+@app.get("/api/files", response_model=List[UploadedFileRecord])
+async def list_files_endpoint(user_id: Optional[str] = Cookie(None, alias=USER_ID_COOKIE)):
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found in cookies.")
+    return file_handler.list_uploaded_files_for_user(user_id)
+
+@app.delete("/api/files/{filename}", response_model=SimpleStatusResponse)
+async def delete_file_endpoint(
+    filename: str = Path(...),
+    user_id: Optional[str] = Cookie(None, alias=USER_ID_COOKIE)
+):
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User ID not found in cookies.")
+
+    success = file_handler.delete_uploaded_file(user_id, filename)
+    if not success:
+        raise HTTPException(status_code=404, detail=f"File '{filename}' not found or delete failed.")
+    return SimpleStatusResponse(success=True, message=f"File '{filename}' deleted successfully.")
 
 # if __name__ == "__main__":
-#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True) # Added reload for dev convenience
+#     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

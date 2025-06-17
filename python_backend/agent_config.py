@@ -10,6 +10,15 @@ load_dotenv() # Load environment variables from .env file
 # PROJECT_ROOT for agent_config.py will be the 'python_backend' directory.
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+# --- File System Paths ---
+# Workspace for files uploaded by the user via UI, accessible by FastAPI and potentially agent tools
+UI_ACCESSIBLE_WORKSPACE_RELATIVE = "user_uploaded_files"
+# This path will be /app/python_backend/user_uploaded_files
+UI_ACCESSIBLE_WORKSPACE = os.path.join(PROJECT_ROOT, UI_ACCESSIBLE_WORKSPACE_RELATIVE)
+
+# Workspace for Code Interpreter (if different) - can be defined later if needed
+# CODE_INTERPRETER_WORKSPACE_RELATIVE = "code_interpreter_ws"
+# CODE_INTERPRETER_WORKSPACE = os.path.join(PROJECT_ROOT, CODE_INTERPRETER_WORKSPACE_RELATIVE)
 # --- Constants ---
 SUGGESTED_PROMPT_COUNT = 4
 MAX_CHAT_HISTORY_MESSAGES = 20 # Max messages to send to LLM from history
