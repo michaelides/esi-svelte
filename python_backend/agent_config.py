@@ -19,8 +19,6 @@ UI_ACCESSIBLE_WORKSPACE = os.path.join(PROJECT_ROOT, UI_ACCESSIBLE_WORKSPACE_REL
 # Workspace for Code Interpreter (if different) - can be defined later if needed
 # CODE_INTERPRETER_WORKSPACE_RELATIVE = "code_interpreter_ws"
 # CODE_INTERPRETER_WORKSPACE = os.path.join(PROJECT_ROOT, CODE_INTERPRETER_WORKSPACE_RELATIVE)
-
-
 # --- Constants ---
 SUGGESTED_PROMPT_COUNT = 4
 MAX_CHAT_HISTORY_MESSAGES = 20 # Max messages to send to LLM from history
