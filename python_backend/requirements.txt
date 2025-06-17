@@ -1,0 +1,4 @@
+fastapi
+uvicorn[standard] # Includes pydantic and other essentials
+# Add other dependencies from the original requirements.txt as needed later
+# e.g., llama_index, huggingface_hub, etc.
