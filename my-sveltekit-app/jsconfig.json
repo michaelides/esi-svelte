@@ -1,11 +1,11 @@
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "$lib": ["src/lib"],
-      "$lib/*": ["src/lib/*"]
-    },
+    // "baseUrl": ".", // REMOVED
+    // "paths": { // REMOVED
+    //   "$lib": ["src/lib"], // REMOVED
+    //   "$lib/*": ["src/lib/*"] // REMOVED
+    // }, // REMOVED
     "checkJs": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

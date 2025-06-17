@@ -18,13 +18,12 @@
     deleteChat
   } from '$lib/stores/chatStore.js';
 
-
   import {
     uploadedFiles,
     uploadFile,
     deleteFile as deleteUploadedFile, // Renamed to avoid conflict if any
     isUploading as isFileUploading,
-    uploadError: fileUploadError,
+    fileUploadError, // Corrected syntax: assume fileUploadError is the exported name
     generalFileError
   } from '$lib/stores/fileStore.js';
 
@@ -151,7 +150,6 @@
             <span class="item-name file-name">{file.filename}</span>
             <div class="item-actions file-actions">
               <button class="action-btn delete-btn" on:click={() => deleteUploadedFile(file.filename)} title="Delete File">🗑️</button>
-
             </div>
           </li>
         {/each}
@@ -164,7 +162,6 @@
     <div>
       <label class="checkbox-label">
         <input type="checkbox" bind:checked={$longTermMemoryEnabled} on:change={updateSettingsOnServer} />
-
         Enable Long-term Memory
       </label>
     </div>
@@ -190,7 +187,6 @@
 
 <style>
   .sidebar {
-
     width: 300px; /* Increased width slightly */
     padding: 1rem; border-right: 1px solid #e0e0e0; height: 100vh;
     display: flex; flex-direction: column; gap: 1.25rem; /* Increased gap */
@@ -240,7 +236,6 @@
   .file-input:disabled { opacity: 0.7; }
 
   label { display: block; margin-bottom: 0.6rem; font-size: 0.95em; color: #495057; }
-
   .checkbox-label { display: flex; align-items: center; font-size: 0.95em; }
   .checkbox-label input[type="checkbox"] { margin-right: 0.5rem; margin-bottom: 0; }
 
