@@ -80,9 +80,8 @@
       <ul class="item-list chat-list">
         {#each $chatHistoryMetadata as chat (chat.chat_id)}
           <li
-            transition:slide|local={{ duration: 200 }} <!-- transition on li -->
-            animate:flip={{ duration: 200 }}         <!-- animate on li -->
-            <!-- title attribute removed from li -->
+            transition:slide|local={{ duration: 200 }}
+            animate:flip={{ duration: 200 }}
           >
             <button
               type="button"
