@@ -23,15 +23,7 @@
     uploadFile,
     deleteFile as deleteUploadedFile, // Renamed to avoid conflict if any
     isUploading as isFileUploading,
-    // fileUploadError, // Removed as per subtask to remove premature file upload code
-  // Removed all imports from fileStore.js as it's not ready yet
-  // import {
-  //   uploadedFiles,
-  //   uploadFile,
-  //   deleteFile as deleteUploadedFile,
-  //   isUploading as isFileUploading,
-  //   generalFileError
-  // } from '$lib/stores/fileStore.js';
+
 
   import { slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
@@ -72,10 +64,7 @@
     }, 500);
   }
 
-  // For file upload - All related logic removed as fileStore.js is not ready
-  // let selectedFileElement;
-  // async function handleFileUpload(event) { ... }
-  // function getFileIcon(fileType) { ... }
+
 </script>
 
 <aside class="sidebar">
@@ -113,18 +102,9 @@
     <div class="section-header">
       <h3>Uploaded Files</h3>
     </div>
+
     <!-- File input and related UI commented out until fileStore.js is ready -->
     <!--
-    <input
-      type="file"
-      on:change={handleFileUpload}
-      disabled={$isFileUploading}
-      bind:this={selectedFileElement}
-      class="file-input"
-    />
-    {#if $isFileUploading}
-      <p class="loading-text">Uploading file...</p>
-    {/if}
     {#if $generalFileError}
        <p class="error-text">File Error: {$generalFileError}</p>
     {/if}
@@ -146,6 +126,7 @@
     {/if}
     -->
     <p><em>(File upload functionality will be implemented here.)</em></p>
+
   </section>
 
   <section class="settings-section">
