@@ -7,6 +7,7 @@
   import { loadChatList } from '$lib/stores/chatStore.js';
   // import { loadUploadedFiles } from '$lib/stores/fileStore.js'; // Removed
 
+
   onMount(async () => {
     const settingsFromServer = await initializeUserSession();
     // initializeUserSession sets isLoggedIn store value
