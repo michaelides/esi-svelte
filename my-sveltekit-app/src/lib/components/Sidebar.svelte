@@ -80,9 +80,9 @@
       <ul class="item-list chat-list">
         {#each $chatHistoryMetadata as chat (chat.chat_id)}
           <li
-            title={chat.name} <!-- title on li -->
             transition:slide|local={{ duration: 200 }} <!-- transition on li -->
             animate:flip={{ duration: 200 }}         <!-- animate on li -->
+            <!-- title attribute removed from li -->
           >
             <button
               type="button"
@@ -90,7 +90,7 @@
               class:selected={$currentChatId === chat.chat_id}
               on:click={() => handleSelectChat(chat.chat_id)}
               aria-label={chat.name} <!-- aria-label on button for accessibility -->
-              <!-- title={chat.name} removed from button, now on li -->
+              title={chat.name} <!-- title attribute now on button -->
             >
               <span class="item-name chat-name">{chat.name}</span>
               <div class="item-actions chat-actions">
