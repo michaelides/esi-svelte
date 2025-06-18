@@ -1,3 +1,4 @@
+
 import { writable } from 'svelte/store'; // 'get' is not needed for this updated version
 
 export const userId = writable(null);
