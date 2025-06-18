@@ -1,0 +1,19 @@
+fastapi
+uvicorn[standard] # Includes pydantic and other essentials
+
+# For file processing in file_handler.py
+python-docx
+PyPDF2
+pandas
+openpyxl # Required by pandas for .xlsx files
+pyreadstat # For .sav (SPSS) files
+
+# Add other dependencies from the original requirements.txt as needed later
+# e.g., llama_index, huggingface_hub, etc.
+# Assuming llama_index, huggingface_hub, python-dotenv are already in the global environment
+# or main project requirements.txt. If not, they should be added here too.
+# For this subtask, only adding explicitly new ones for file_handler.
+# llama-index-llms-gemini
+# llama-index-embeddings-google
+# huggingface_hub
+# python-dotenv
