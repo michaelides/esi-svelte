@@ -89,8 +89,8 @@
               class="chat-item-button"
               class:selected={$currentChatId === chat.chat_id}
               on:click={() => handleSelectChat(chat.chat_id)}
-              aria-label={chat.name} <!-- aria-label on button for accessibility -->
-              title={chat.name} <!-- title attribute now on button -->
+              aria-label={chat.name}
+              title={chat.name}
             >
               <span class="item-name chat-name">{chat.name}</span>
               <div class="item-actions chat-actions">
