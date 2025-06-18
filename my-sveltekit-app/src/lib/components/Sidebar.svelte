@@ -21,6 +21,7 @@
   // All fileStore.js related imports and premature code have been removed.
   // The file upload section in the template is also commented out or placeholder.
 
+
   import { slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
 
@@ -64,6 +65,7 @@
   // let selectedFileElement;
   // async function handleFileUpload(event) { ... }
   // function getFileIcon(fileType) { ... }
+
 </script>
 
 <aside class="sidebar">
@@ -101,6 +103,7 @@
     <div class="section-header">
       <h3>Uploaded Files</h3>
     </div>
+
     <!-- File input and related UI commented out until fileStore.js is ready -->
     <!--
     <input
