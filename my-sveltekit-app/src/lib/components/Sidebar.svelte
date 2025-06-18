@@ -1,12 +1,12 @@
 <script>
-  import { get } from 'svelte/store'; // Added get
+  import { get } from 'svelte/store'; // Added get; Ensured semicolon
   import {
     llmTemperature,
     llmVerbosity,
     searchResultsCount,
     longTermMemoryEnabled,
     updateSettingsOnServer
-  } from '$lib/stores/uiStore.js';
+  } from '$lib/stores/uiStore.js'; // Ensured semicolon
 
   import {
     chatHistoryMetadata,
@@ -16,14 +16,13 @@
     selectChat,
     renameChat,
     deleteChat
-  } from '$lib/stores/chatStore.js';
+  } from '$lib/stores/chatStore.js'; // Ensured semicolon
 
   // All fileStore.js related imports and premature code have been removed.
   // The file upload section in the template is also commented out or placeholder.
 
-
-  import { slide } from 'svelte/transition';
-  import { flip } from 'svelte/animate';
+  import { slide } from 'svelte/transition'; // Ensured semicolon
+  // import { flip } from 'svelte/animate'; // Temporarily commented out
 
   // For chat rename (existing)
   // let chatToRenameId = null; // Not directly used with prompt
@@ -65,7 +64,6 @@
   // let selectedFileElement;
   // async function handleFileUpload(event) { ... }
   // function getFileIcon(fileType) { ... }
-
 </script>
 
 <aside class="sidebar">
@@ -103,7 +101,6 @@
     <div class="section-header">
       <h3>Uploaded Files</h3>
     </div>
-
     <!-- File input and related UI commented out until fileStore.js is ready -->
     <!--
     <input
