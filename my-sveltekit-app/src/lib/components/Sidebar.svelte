@@ -18,11 +18,8 @@
     deleteChat
   } from '$lib/stores/chatStore.js';
 
-  import {
-    uploadedFiles,
-    uploadFile,
-    deleteFile as deleteUploadedFile, // Renamed to avoid conflict if any
-    isUploading as isFileUploading,
+  // All fileStore.js related imports and premature code have been removed.
+  // The file upload section in the template is also commented out or placeholder.
 
 
   import { slide } from 'svelte/transition';
@@ -64,6 +61,10 @@
     }, 500);
   }
 
+  // For file upload - All related logic removed as fileStore.js is not ready
+  // let selectedFileElement;
+  // async function handleFileUpload(event) { ... }
+  // function getFileIcon(fileType) { ... }
 
 </script>
 
@@ -105,6 +106,16 @@
 
     <!-- File input and related UI commented out until fileStore.js is ready -->
     <!--
+    <input
+      type="file"
+      on:change={handleFileUpload}
+      disabled={$isFileUploading}
+      bind:this={selectedFileElement}
+      class="file-input"
+    />
+    {#if $isFileUploading}
+      <p class="loading-text">Uploading file...</p>
+    {/if}
     {#if $generalFileError}
        <p class="error-text">File Error: {$generalFileError}</p>
     {/if}
@@ -126,7 +137,6 @@
     {/if}
     -->
     <p><em>(File upload functionality will be implemented here.)</em></p>
-
   </section>
 
   <section class="settings-section">
