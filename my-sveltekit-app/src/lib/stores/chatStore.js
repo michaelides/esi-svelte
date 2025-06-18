@@ -1,4 +1,6 @@
 import { writable, get } from 'svelte/store';
+import { userGreeting } from '$lib/stores/userStore.js'; // Import for error reporting
+
 
 // --- State ---
 export const chatHistoryMetadata = writable([]); // List of { chat_id, name, last_updated }
@@ -22,15 +24,42 @@ function _updateMetadataTimestamp(chatId, timestamp = null) {
 // --- Functions ---
 export async function loadChatList() {
   isLoadingChatList.set(true);
+  userGreeting.set('Initializing: Loading chat list...'); // Update greeting during this phase
   try {
     const response = await fetch('/api/chats');
-    if (!response.ok) throw new Error(`Failed to fetch chat list: ${response.statusText}`);
-    const data = await response.json();
-    data.chats.sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
-    chatHistoryMetadata.set(data.chats);
+    if (!response.ok) {
+      let errorMsg = `API chat list request failed (${response.status} ${response.statusText})`;
+      try {
+        const errorData = await response.json();
+        errorMsg += errorData.detail ? ` - ${errorData.detail}` : '';
+      } catch (e) { /* no json error body */ }
+      userGreeting.set(`Error: ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+
+    userGreeting.set('Initializing: Parsing chat list...');
+    const data = await response.json(); // Expects ListChatsResponse -> { chats: List[ChatMetadata] }
+
+    if (!data || !Array.isArray(data.chats)) {
+        const errorMsg = 'Invalid data structure received from /api/chats.';
+        userGreeting.set(`Error: ${errorMsg}`);
+        throw new Error(errorMsg);
+    }
+
+    const sortedChats = data.chats.sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+    chatHistoryMetadata.set(sortedChats);
+    // Set a final success message or clear it. If userGreeting was set by API, that should prevail.
+    // This message might be overwritten if initializeUserSession's greeting is set last.
+    // For now, let's indicate this specific step is done.
+    userGreeting.set('Initialization complete. Ready.');
+
   } catch (error) {
-    console.error("Error loading chat list:", error);
-    chatHistoryMetadata.set([]);
+    console.error("Failed to load chat list:", error.message);
+    // userGreeting might have been set by a more specific error above.
+    // If not, this is a fallback.
+    // To avoid complex checks, just set it. Last error wins.
+    userGreeting.set(`ChatList Error: ${error.message}. Please try refreshing.`);
+    chatHistoryMetadata.set([]); // Clear chat list on error
   } finally {
     isLoadingChatList.set(false);
   }

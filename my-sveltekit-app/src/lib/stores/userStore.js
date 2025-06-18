@@ -1,48 +1,54 @@
-import { writable } from 'svelte/store';
+
+import { writable } from 'svelte/store'; // 'get' is not needed for this updated version
 
 export const userId = writable(null);
-export const isLoggedIn = writable(false); // Represents if the session has been initialized
-export const userGreeting = writable(''); // To store the greeting message from backend
+export const isLoggedIn = writable(false);
+export const userGreeting = writable(''); // Will be updated with progress/errors
 
 export async function initializeUserSession() {
+  userGreeting.set('Initializing: Fetching session...');
   try {
-    // Ensure this path is correct based on how the SvelteKit app is served
-    // relative to the FastAPI backend. If they are on different ports during dev,
-    // a proxy is needed (handled in vite.config.js).
-    const response = await fetch('/api/init', {
-      method: 'POST',
-      headers: {
-        // Cookies are automatically sent by the browser, so no explicit 'credentials: include'
-        // is typically needed unless dealing with complex cross-origin scenarios not covered by simple proxy.
-      }
-    });
+    const response = await fetch('/api/init', { method: 'POST' });
 
     if (!response.ok) {
-      // Attempt to get more specific error message from backend if available
-      let errorData;
+      let errorMsg = `API init request failed (${response.status} ${response.statusText})`;
       try {
-        errorData = await response.json();
-      } catch (e) {
-        // Backend didn't send JSON or other error
-      }
-      console.error("Initialization API error response:", errorData);
-      throw new Error(`Initialization failed: ${response.statusText}${errorData ? ' - ' + (errorData.detail || JSON.stringify(errorData)) : ''}`);
+        const errorData = await response.json();
+        errorMsg += errorData.detail ? ` - ${errorData.detail}` : '';
+      } catch (e) { /* no json error body */ }
+      userGreeting.set(`Error: ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
+    userGreeting.set('Initializing: Parsing session data...');
     const data = await response.json();
 
-    userId.set(data.user_id);
-    userGreeting.set(data.greeting);
-    isLoggedIn.set(true); // Indicate session is initialized and successful
+    if (!data || !data.user_id || !data.settings || typeof data.greeting === 'undefined') {
+      const errorMsg = 'Invalid data structure received from /api/init.';
+      userGreeting.set(`Error: ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
 
-    console.log("User session initialized:", data);
-    // Return settings to be set in uiStore
+    userId.set(data.user_id);
+    // userGreeting will be set by data.greeting if successful, or by loadChatList's progress.
+    // For now, let's set it to the API greeting. If loadChatList starts, it will override.
+    userGreeting.set(data.greeting);
+    isLoggedIn.set(true);
+
+    // console.log('User session initialized successfully, isLoggedIn set to true.'); // Keep for local debugging
     return data.settings;
+
   } catch (error) {
-    console.error("Failed to initialize user session:", error);
+    console.error("Failed to initialize user session:", error.message);
+    // If userGreeting wasn't set by a more specific error above, this is a fallback.
+    // Example: Network error before fetch even starts, or JSON parsing of response failed.
+    // The more specific error messages inside try block are preferred.
+    // This ensures *an* error message is set if one wasn't already.
+    // Check if a specific error was already set by inspecting the error message itself
+    // or if the greeting still shows an "Initializing..." message.
+    // For simplicity here, we just overwrite if an error is caught at this level.
+    userGreeting.set(`Init Error: ${error.message}. Please check network and backend service.`);
     isLoggedIn.set(false);
-    // Set a user-friendly error message
-    userGreeting.set("Failed to connect to the ESI service. Please try again later.");
-    return null; // Indicate failure or return default settings
+    return null;
   }
 }
