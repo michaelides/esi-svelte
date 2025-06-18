@@ -1,7 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { userGreeting } from '$lib/stores/userStore.js'; // Import for error reporting
 
-
 // --- State ---
 export const chatHistoryMetadata = writable([]); // List of { chat_id, name, last_updated }
 export const currentChatId = writable(null);

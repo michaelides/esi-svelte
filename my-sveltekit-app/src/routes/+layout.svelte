@@ -5,7 +5,8 @@
   import { initializeUserSession, userGreeting, isLoggedIn } from '$lib/stores/userStore.js';
   import { setSettingsFromServer } from '$lib/stores/uiStore.js';
   import { loadChatList } from '$lib/stores/chatStore.js';
-  import { loadUploadedFiles } from '$lib/stores/fileStore.js'; // Import loadUploadedFiles
+  // import { loadUploadedFiles } from '$lib/stores/fileStore.js'; // Removed
+
 
   onMount(async () => {
     const settingsFromServer = await initializeUserSession();
@@ -15,7 +16,7 @@
         setSettingsFromServer(settingsFromServer);
       }
       await loadChatList(); // Load chat list
-      await loadUploadedFiles(); // Load uploaded files
+      // await loadUploadedFiles(); // Removed
     }
     // If initializeUserSession fails, isLoggedIn will be false,
     // and userGreeting will contain an error message from userStore.
