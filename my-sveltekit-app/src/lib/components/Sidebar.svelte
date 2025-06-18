@@ -79,15 +79,18 @@
     {:else}
       <ul class="item-list chat-list">
         {#each $chatHistoryMetadata as chat (chat.chat_id)}
-          <li> <!-- Outer li for list structure, no click handler -->
+          <li
+            title={chat.name} <!-- title on li -->
+            transition:slide|local={{ duration: 200 }} <!-- transition on li -->
+            animate:flip={{ duration: 200 }}         <!-- animate on li -->
+          >
             <button
               type="button"
               class="chat-item-button"
               class:selected={$currentChatId === chat.chat_id}
               on:click={() => handleSelectChat(chat.chat_id)}
-              title={chat.name}
-              transition:slide|local={{ duration: 200 }}
-              animate:flip={{ duration: 200 }}
+              aria-label={chat.name} <!-- aria-label on button for accessibility -->
+              <!-- title={chat.name} removed from button, now on li -->
             >
               <span class="item-name chat-name">{chat.name}</span>
               <div class="item-actions chat-actions">
