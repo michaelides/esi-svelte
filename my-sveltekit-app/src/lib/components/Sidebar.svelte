@@ -22,7 +22,7 @@
   // The file upload section in the template is also commented out or placeholder.
 
   import { slide } from 'svelte/transition'; // Ensured semicolon
-  // import { flip } from 'svelte/animate'; // Temporarily commented out
+  import { flip } from 'svelte/animate';   // Ensured semicolon (Uncommented)
 
   // For chat rename (existing)
   // let chatToRenameId = null; // Not directly used with prompt
@@ -79,18 +79,22 @@
     {:else}
       <ul class="item-list chat-list">
         {#each $chatHistoryMetadata as chat (chat.chat_id)}
-          <li
-            class:selected={$currentChatId === chat.chat_id}
-            on:click={() => handleSelectChat(chat.chat_id)}
-            title={chat.name}
-            transition:slide|local={{ duration: 200 }}
-            animate:flip={{ duration: 200 }}
-          >
-            <span class="item-name chat-name">{chat.name}</span>
-            <div class="item-actions chat-actions">
-              <button class="action-btn rename-btn" on:click|stopPropagation={() => promptRenameChat(chat)} title="Rename">✏️</button>
-              <button class="action-btn delete-btn" on:click|stopPropagation={() => confirmDeleteChat(chat.chat_id, chat.name)} title="Delete">🗑️</button>
-            </div>
+          <li> <!-- Outer li for list structure, no click handler -->
+            <button
+              type="button"
+              class="chat-item-button"
+              class:selected={$currentChatId === chat.chat_id}
+              on:click={() => handleSelectChat(chat.chat_id)}
+              title={chat.name}
+              transition:slide|local={{ duration: 200 }}
+              animate:flip={{ duration: 200 }}
+            >
+              <span class="item-name chat-name">{chat.name}</span>
+              <div class="item-actions chat-actions">
+                <button class="action-btn rename-btn" on:click|stopPropagation={() => promptRenameChat(chat)} title="Rename">✏️</button>
+                <button class="action-btn delete-btn" on:click|stopPropagation={() => confirmDeleteChat(chat.chat_id, chat.name)} title="Delete">🗑️</button>
+              </div>
+            </button>
           </li>
         {/each}
       </ul>
@@ -183,17 +187,49 @@
   .section-header button:hover { color: #0056b3; }
 
   .item-list { list-style: none; padding-left: 0; margin: 0; max-height: 220px; overflow-y: auto; }
+  /* Original .item-list li styles are mostly moved to .chat-item-button or are no longer needed on li directly */
   .item-list li {
-    padding: 0.65rem 0.5rem; margin-bottom: 0.3rem; border-radius: 0.3rem; cursor: default; /* Default for files, chats override */
-    display: flex; justify-content: space-between; align-items: center;
-    transition: background-color 0.2s ease;
+    margin-bottom: 0.3rem; /* Keep for spacing between items */
+    /* display: flex; This is now on the button if it needs to fill the li */
   }
-  .chat-list li { cursor: pointer; } /* Specific for chat items */
-  .item-list li:hover { background-color: #f0f0f0; }
-  .chat-list li.selected { background-color: #007bff; color: white; }
-  .chat-list li.selected .item-name, .chat-list li.selected .action-btn { color: white; }
-  .chat-list li.selected .action-btn { opacity: 0.7; }
-  .chat-list li.selected .action-btn:hover { opacity: 1; }
+  /* .chat-list li { cursor: pointer; } /* Removed, button handles cursor */
+  /* .item-list li:hover { background-color: #f0f0f0; } /* Moved to button */
+  /* .chat-list li.selected { background-color: #007bff; color: white; } /* Moved to button */
+  /* .chat-list li.selected .item-name, .chat-list li.selected .action-btn { color: white; } /* Handled by button's selected class */
+
+  .chat-item-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.65rem 0.5rem; /* Matched original li padding */
+    margin: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: inherit;
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+    border-radius: 0.3rem; /* Matched original li radius */
+    transition: background-color 0.2s ease; /* Added transition here */
+  }
+
+  .chat-item-button:hover {
+    background-color: #f0f0f0; /* Matched original li hover */
+  }
+
+  .chat-item-button.selected {
+    background-color: #007bff; /* Matched original li selected */
+    color: white;
+  }
+
+  .chat-item-button.selected .item-name,
+  .chat-item-button.selected .action-btn {
+    color: white;
+  }
+  .chat-item-button.selected .action-btn { opacity: 0.7; }
+  .chat-item-button.selected .action-btn:hover { opacity: 1; }
 
   .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; padding-right: 8px;}
   .file-icon { margin-right: 8px; font-size: 0.9em; }
