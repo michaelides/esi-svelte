@@ -23,9 +23,7 @@
     uploadFile,
     deleteFile as deleteUploadedFile, // Renamed to avoid conflict if any
     isUploading as isFileUploading,
-    fileUploadError, // Corrected syntax: assume fileUploadError is the exported name
-    generalFileError
-  } from '$lib/stores/fileStore.js';
+
 
   import { slide } from 'svelte/transition';
   import { flip } from 'svelte/animate';
@@ -66,26 +64,7 @@
     }, 500);
   }
 
-  // For file upload
-  let selectedFileElement; // To reset file input
-  async function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (file) {
-      await uploadFile(file);
-      if (selectedFileElement) { // Reset file input
-        selectedFileElement.value = '';
-      }
-    }
-  }
 
-  function getFileIcon(fileType) {
-    switch (fileType) {
-      case 'document': return '📄'; // Document icon
-      case 'text': return 'TXT'; // Text icon
-      case 'dataframe': return '📊'; // Dataframe/table icon
-      default: return '❓'; // Other/unknown
-    }
-  }
 </script>
 
 <aside class="sidebar">
@@ -123,19 +102,9 @@
     <div class="section-header">
       <h3>Uploaded Files</h3>
     </div>
-    <input
-      type="file"
-      on:change={handleFileUpload}
-      disabled={$isFileUploading}
-      bind:this={selectedFileElement}
-      class="file-input"
-    />
-    {#if $isFileUploading}
-      <p class="loading-text">Uploading file...</p>
-    {/if}
-    {#if $fileUploadError}
-      <p class="error-text">Upload Error: {$fileUploadError}</p>
-    {/if}
+
+    <!-- File input and related UI commented out until fileStore.js is ready -->
+    <!--
     {#if $generalFileError}
        <p class="error-text">File Error: {$generalFileError}</p>
     {/if}
@@ -155,6 +124,9 @@
         {/each}
       </ul>
     {/if}
+    -->
+    <p><em>(File upload functionality will be implemented here.)</em></p>
+
   </section>
 
   <section class="settings-section">
