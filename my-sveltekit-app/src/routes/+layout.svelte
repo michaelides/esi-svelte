@@ -1,6 +1,7 @@
 <script>
   import '../app.css'; // Global styles
-  import { onMount, get } from 'svelte'; // Added get
+  import { onMount } from 'svelte'; // Corrected: onMount from svelte
+  import { get } from 'svelte/store'; // Corrected: get from svelte/store
   import { initializeUserSession, userGreeting, isLoggedIn } from '$lib/stores/userStore.js';
   import { setSettingsFromServer } from '$lib/stores/uiStore.js';
   import { loadChatList } from '$lib/stores/chatStore.js';
